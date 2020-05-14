@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Parsing a string for generating custom search algorithm</title>
+<meta name="description" content="A small desctiption of this repository, particularly, algorithm of tokenizing a string.">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//blog/2018/welcome-to-jekyll/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Parsing a string for generating custom search algorithm</h1>
+      <em class="post-meta">
+        <time>Feb 6, 2018</time>
+      </em>
+    </header>
+
+    <div class="post-content">
+      
+      <p>A small desctiption of this <a href="https://github.com/AlexIzh/SearchQueryParser">repository</a>, particularly, algorithm of tokenizing a string.</p>
+
+<p>First, let&#39;s define operator&#39;s types. As we know, operators could be either binary or unary.</p>
+<div class="highlight"><pre><code class="language-swift" data-lang="swift"><span></span><span class="kd">enum</span> <span class="nc">OperatorType</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">binary</span>
+  <span class="k">case</span> <span class="n">unary</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Also, operator should have priority, so we know which operator should be executed first if we get string without any brackets. Let&#39;s define protocol which should be conformed by all operators:</p>
+<div class="highlight"><pre><code class="language-swift" data-lang="swift"><span></span><span class="kd">protocol</span> <span class="nc">Operator</span><span class="p">:</span> <span class="nb">Hashable</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nv">priority</span><span class="p">:</span> <span class="nb">Int</span> <span class="p">{</span> <span class="kr">get</span> <span class="p">}</span>
+  <span class="kd">var</span> <span class="nv">type</span><span class="p">:</span> <span class="n">OperatorType</span> <span class="p">{</span> <span class="kr">get</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Awesome! Now, all our operators could look like this: </p>
+<div class="highlight"><pre><code class="language-swift" data-lang="swift"><span></span><span class="kd">public</span> <span class="kd">enum</span> <span class="nc">DefaultOperator</span><span class="p">:</span> <span class="nb">Int</span><span class="p">,</span> <span class="n">Operator</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">not</span> <span class="p">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">and</span> <span class="p">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">or</span> <span class="p">=</span> <span class="mi">1</span>
+
+  <span class="kd">public</span> <span class="kd">var</span> <span class="nv">type</span><span class="p">:</span> <span class="n">OperatorType</span> <span class="p">{</span> <span class="k">return</span> <span class="kc">self</span> <span class="p">==</span> <span class="p">.</span><span class="n">not</span> <span class="p">?</span> <span class="p">.</span><span class="n">unary</span> <span class="p">:</span> <span class="p">.</span><span class="n">binary</span> <span class="p">}</span>
+  <span class="kd">public</span> <span class="kd">var</span> <span class="nv">priority</span><span class="p">:</span> <span class="nb">Int</span> <span class="p">{</span> <span class="k">return</span> <span class="kc">self</span><span class="p">.</span><span class="n">rawValue</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>As you can see, <code>not</code> operator has highest priority and should be executed first, then <code>and</code> and last one <code>or</code>. Later we will use them for generating predicates (<code>NSPredicate</code>) or blocks/closures for filtering arrays.</p>
+
+<p>Now, let&#39;s talk about parsing string. We have to get array of items sorted by priority of execution. In this example, we will prepare array for <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">reverse polish notation</a>. If we transform our string to RPN, we can easy to calculate final value and prepare it for predicates. </p>
+
+<p>First what we should do is separate every word by spaces and distinguish where string contains valid brackets and phrases. A phrase is a string inside two &quot; characters, they should be after space or bracket and before them respectively. 
+Algorith for this is a quite simple, pseudocode looks like this: </p>
+<div class="highlight"><pre><code class="language-swift" data-lang="swift"><span></span><span class="n">We</span> <span class="n">have</span> <span class="n">to</span> <span class="n">have</span> <span class="n">a</span> <span class="n">few</span> <span class="n">stores</span><span class="p">:</span> 
+<span class="o">-</span> <span class="n">Store</span> <span class="n">with</span> <span class="n">indexes</span> <span class="n">of</span> <span class="n">opening</span> <span class="n">brackets</span>
+<span class="o">-</span> <span class="n">Store</span> <span class="n">with</span> <span class="n">tokens</span> <span class="p">(</span><span class="n">this</span> <span class="n">store</span> <span class="n">will</span> <span class="n">be</span> <span class="n">returned</span><span class="p">)</span>
+<span class="o">-</span> <span class="n">Store</span> <span class="n">with</span> <span class="n">a</span> <span class="n">context</span>
+
+<span class="n">Go</span> <span class="n">through</span> <span class="n">all</span> <span class="n">characters</span> <span class="k">in</span> <span class="n">the</span> <span class="n">string</span>
+<span class="n">If</span> <span class="n">the</span> <span class="n">character</span> <span class="k">is</span> <span class="n">a</span> <span class="n">space</span>
+<span class="o">-</span> <span class="n">Save</span> <span class="n">value</span> <span class="n">from</span> <span class="n">the</span> <span class="n">context</span> <span class="n">store</span> <span class="n">to</span> <span class="n">the</span> <span class="n">tokens</span> <span class="n">store</span>
+
+<span class="n">If</span> <span class="n">the</span> <span class="n">character</span> <span class="k">is</span> <span class="n">a</span> <span class="s">&quot; symbol and it&#39;s a valid place for new token </span>
+<span class="s">  (the previous character is a space or an opening bracket)</span>
+<span class="s">- Collect characters until we get the end of the string or valid closing phrase character </span>
+<span class="s">  (&quot;</span> <span class="n">character</span> <span class="n">at</span> <span class="n">the</span> <span class="n">end</span> <span class="n">of</span> <span class="n">the</span> <span class="n">string</span> <span class="n">or</span> <span class="n">before</span> <span class="n">a</span> <span class="n">space</span> <span class="n">or</span> <span class="n">a</span> <span class="n">closing</span> <span class="n">bracket</span><span class="p">)</span> 
+<span class="o">-</span> <span class="n">If</span> <span class="n">we</span> <span class="kr">get</span> <span class="n">valid</span> <span class="n">closing</span> <span class="n">phrase</span> <span class="n">character</span><span class="p">,</span> <span class="n">save</span> <span class="n">it</span> <span class="k">as</span> <span class="n">a</span> <span class="n">phrase</span> <span class="n">into</span> <span class="n">the</span> <span class="n">tokens</span> <span class="n">store</span>
+
+<span class="n">If</span> <span class="n">the</span> <span class="n">character</span> <span class="k">is</span> <span class="n">a</span> <span class="n">opening</span> <span class="n">bracket</span> <span class="n">and</span> <span class="n">it</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">a</span> <span class="n">valid</span> <span class="n">place</span> <span class="k">for</span> <span class="n">new</span> <span class="n">token</span>
+<span class="o">-</span> <span class="n">Save</span> <span class="n">and</span> <span class="n">reset</span> <span class="n">current</span> <span class="n">context</span><span class="p">,</span> <span class="n">save</span> <span class="n">empty</span> <span class="n">token</span> <span class="n">into</span> <span class="n">the</span> <span class="n">tokens</span> <span class="n">store</span> <span class="n">and</span> <span class="n">save</span> <span class="n">index</span> <span class="n">of</span> <span class="n">this</span> <span class="n">token</span> <span class="n">into</span> <span class="n">brackets</span> <span class="n">store</span>
+  <span class="p">(</span><span class="n">into</span> <span class="n">this</span> <span class="n">token</span> <span class="n">we</span> <span class="n">will</span> <span class="n">put</span> <span class="n">the</span> <span class="n">bracket</span> <span class="k">if</span> <span class="n">we</span> <span class="n">found</span> <span class="n">valid</span> <span class="n">closing</span> <span class="n">bracket</span> <span class="n">character</span><span class="p">)</span>
+
+<span class="n">If</span> <span class="n">the</span> <span class="n">character</span> <span class="k">is</span> <span class="n">a</span> <span class="n">closing</span> <span class="n">bracket</span> <span class="n">and</span> <span class="n">it</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">a</span> <span class="n">valid</span> <span class="n">place</span> <span class="k">for</span> <span class="n">this</span> 
+  <span class="p">(</span><span class="n">it</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">the</span> <span class="n">end</span> <span class="n">of</span> <span class="n">the</span> <span class="n">string</span> <span class="n">or</span> <span class="n">next</span> <span class="n">character</span> <span class="k">is</span> <span class="n">a</span> <span class="n">space</span> <span class="n">or</span> <span class="n">a</span> <span class="n">closing</span> <span class="n">bracket</span><span class="p">)</span>
+<span class="o">-</span> <span class="n">Get</span> <span class="n">position</span> <span class="n">of</span> <span class="bp">last</span> <span class="n">opening</span> <span class="n">bracket</span> <span class="n">and</span> <span class="kr">get</span> <span class="n">empty</span> <span class="n">token</span> <span class="n">which</span> <span class="n">we</span> <span class="n">saved</span> <span class="n">before</span><span class="p">,</span> 
+  <span class="n">save</span> <span class="n">opening</span> <span class="n">bracket</span> <span class="n">to</span> <span class="n">this</span> <span class="n">token</span><span class="p">,</span> <span class="n">save</span> <span class="n">current</span> <span class="n">context</span> <span class="n">and</span> <span class="n">save</span> <span class="n">closing</span> <span class="n">bracket</span> <span class="n">after</span> <span class="n">it</span><span class="p">,</span>
+  <span class="n">remove</span> <span class="n">index</span> <span class="n">of</span> <span class="n">the</span> <span class="n">opening</span> <span class="n">bracket</span> <span class="n">from</span> <span class="n">the</span> <span class="n">store</span>
+
+<span class="n">If</span> <span class="n">no</span> <span class="n">one</span> <span class="n">conditions</span> <span class="n">are</span> <span class="n">met</span>
+<span class="o">-</span> <span class="n">Save</span> <span class="n">the</span> <span class="n">character</span> <span class="n">to</span> <span class="n">the</span> <span class="n">context</span> <span class="n">store</span>
+
+<span class="n">After</span> <span class="n">it</span><span class="p">,</span> <span class="n">we</span> <span class="n">can</span> <span class="n">to</span> <span class="n">finish</span> <span class="n">our</span> <span class="n">preparations</span><span class="p">:</span>
+<span class="o">-</span> <span class="n">Save</span> <span class="n">value</span> <span class="n">from</span> <span class="n">the</span> <span class="n">context</span> <span class="n">store</span> <span class="n">to</span> <span class="n">the</span> <span class="n">tokens</span> <span class="n">store</span>
+<span class="o">-</span> <span class="n">Go</span> <span class="n">through</span> <span class="n">brackets</span> <span class="n">store</span> <span class="n">and</span> <span class="n">add</span> <span class="n">an</span> <span class="n">opening</span> <span class="n">bracket</span> <span class="n">to</span> <span class="n">the</span> <span class="n">token</span> <span class="n">with</span> <span class="n">the</span> <span class="n">index</span> <span class="n">which</span> <span class="n">we</span> <span class="kr">get</span> <span class="n">from</span> <span class="n">the</span> <span class="n">store</span>
+  <span class="p">(</span><span class="n">it</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">needed</span> <span class="k">for</span> <span class="n">appending</span> <span class="n">invalid</span> <span class="n">opening</span> <span class="n">brackets</span> <span class="n">to</span> <span class="n">a</span> <span class="kr">right</span> <span class="n">place</span><span class="p">)</span>
+<span class="o">-</span> <span class="n">Remove</span> <span class="n">all</span> <span class="n">empty</span> <span class="n">tokens</span> <span class="n">from</span> <span class="n">the</span> <span class="n">tokens</span> <span class="n">store</span>
+</code></pre></div>
+<p>Quite easy, doesn&#39;t it? You can look at the code <a href="https://github.com/AlexIzh/SearchQueryParser/blob/master/SearchQueryParser/SearchQueryParser/TokensGenerator.swift">here</a>.</p>
+
+<p>After that, we can prepare the result for <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">RPN</a> but it isn&#39;t part of the article already.</p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2020 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>
