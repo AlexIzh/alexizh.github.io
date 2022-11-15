@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Funny push transition bug</title>
+<meta name="description" content="Preview of the bug">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//blog/2019/animation-bug/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Funny push transition bug</h1>
+      <em class="post-meta">
+        <time>Jun 24, 2019</time>
+      </em>
+    </header>
+
+    <div class="post-content">
+      
+      <h3 id="preview-of-the-bug">Preview of the bug</h3>
+
+<p><img height="700" src="/images/blog/bug_preview.gif" /></p>
+
+<h3 id="description">Description</h3>
+
+<p>If a pushed view controller has an input accessory view (overridden <code>inputAccessoryView</code> method and a non-nill view is returned from there), then when any text input view calls <code>becomeFirstResponder</code> before push animation has been done, push animation is repeated (see the preview).</p>
+
+<p>So, to show the bug just enough to implement:</p>
+
+<pre><code class="language-swift">override var inputAccessoryView: UIView? {
+  return UIView()
+}
+
+override var canBecomeFirstResponder: Bool {
+  return true
+}
+</code></pre>
+
+<p>And just to call <code>becomeFirstResponder</code> before <code>viewDidAppear</code></p>
+
+<pre><code class="language-swift">override func viewDidLoad() {
+  super.viewDidLoad()
+  DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+    self.contentTextField.becomeFirstResponder()
+  }
+}
+</code></pre>
+
+<p>That’s all, now when this controller will be pushed into <code>UINavigationViewController</code> you will see the bug.</p>
+
+<p>One interesting case that if to remove either <code>inputAccessoryView</code> or <code>canBecomeFirstResponder</code> method (implement only one of them), then the animation will be a bit different (no less terrible though).</p>
+
+<p><img height="700" src="/images/blog/bug_preview_2.gif" /></p>
+
+<h3 id="fix">Fix</h3>
+
+<p>In case when you need to use <code>inpuAccessoryView</code> or <code>canBecomeFirstResponder</code> on a view controller, you should be sure that all <code>becomeFirstResponder</code> methods are called only after or inside <code>viewDidAppear</code> method.</p>
+
+<p>For example:</p>
+
+<pre><code class="language-swift">var isViewAppeared = false {
+   didSet { showKeyboardIfNecessary() } 
+}
+
+weak var targetInput: UIResponder? { 
+  didSet { showKeyboardIfNecessary() } 
+}
+
+override func viewDidLoad() {
+  super.viewDidLoad()
+  DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { /// any load operation here
+    self.targetInput = someView
+  }
+}
+
+override func viewDidAppear() {
+  super.viewDidAppear()
+  isViewAppeared = true
+}
+
+func showKeyboardIfNecessary() {
+  if let input = targetInput, isViewAppeared {
+    input.becomeFirstResponder()
+  }
+  targetInput = nil
+}
+</code></pre>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Comparing markdown swift libraries</title>
+<meta name="description" content="Today I’ll compare and try to choose a library for parsing and displaying markdown inside swift environment (mostly iOS).">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//blog/2018/markdown-libraries/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Comparing markdown swift libraries</h1>
+      <em class="post-meta">
+        <time>Jul 10, 2018</time>
+      </em>
+    </header>
+
+    <div class="post-content">
+      
+      <p>Today I’ll compare and try to choose a library for parsing and displaying markdown inside swift environment (mostly iOS).</p>
+
+<p>Let’s start with the performance. I took a quite simple markdown file and compared the performance of each library. Results here (in seconds):</p>
+
+<pre><code>2/ `Down` (based on cmark) from markdown to an attributed string: ~0.12 
+3/ Marky-Mark: ~0.07
+4/ SwiftyMarkdown (parser which is not using regular expressions, but scanning a string manually instead) - ~0.02
+</code></pre>
+
+<p>So, from the first view, the conclusion is simple - the library with a custom parsing algorithm is the best (second position in performance), but library based on C-library is slowest (could it ever be at all?). But don’t be so fast, let’s look at it a bit deeper.</p>
+
+<p>Why <code>Down</code> is so slow? After opening sources, we can see that cmark doesn’t support converting markdown to <code>NSAttributedString</code> (not a surprise). It supports xml, html, latex, etc. So, for getting an attributed string we need to convert markdown file to <code>html/xml</code> and then to <code>NSAttributedString</code>. Let’s check how much time necessary for the every step:</p>
+
+<pre><code>1/ Markdown to HTML - ~0.001s - Wow! That's incredibly fast! (commonly, it takes from 0.0006 to 0.0008, but sometimes 0.0012 or 0.0010)
+2/ HTML to NSAttributedString (which is done by standard Apple way) - ~0.115
+</code></pre>
+
+<p>And here what we have. C-library is awesome, fastest way to do it, but at the same time, if we want to get <code>NSAttributedString</code> from this, we have to think how how time/performance matters for us. Or, we can find/develop another solution how can we convert cmark to <code>NSAttributedString</code>. For example, it could be an updating of cmark library to provide custom attributes from which we can easily create <code>NSAttributedString</code> (so we won’t have <code>html</code> layer between). I would really be excited if someone implemented it!</p>
+
+<p>Conclusions:
+<em>Down:</em></p>
+<ul>
+  <li>incredibly fast for converting markdown to html/latex/xml</li>
+  <li>Full supporting of markdown</li>
+  <li>really slow for using in the iOS, because html -&gt; NSAttributedString is slow</li>
+</ul>
+
+<p><em>Marky-Mark:</em></p>
+<ul>
+  <li>not so fast</li>
+  <li>has some problems with rendering when using their text view</li>
+</ul>
+
+<p><em>SwiftMarkdown:</em></p>
+<ul>
+  <li>fastest way to get NSAttributedString from markdown in ios</li>
+  <li>doesn’t support links inside bold text</li>
+  <li>doesn’t support <code>code blocks</code></li>
+</ul>
+
+<p><em>What do we have at the end?</em>
+In the network a lot of libraries which doesn’t use cmark library for parsing markdown. Some of them use regex, some - custom scanning. 
+Libraries with regex could be easy to maintained and updated/added new features, libraries which use custom scanning could be maintained very difficult because necessary to be involved in the whole algorithm. If you need to have the fastest way to do that - use either cmark or custom scanning algorithm. If you need to have good maintenance - use regex, but when you have a lot of rules + quite big markdown file, use a different thread for parsing and generating an attributed string. If you need to support maximum markdown features, use <code>Down</code> or any library based on <code>cmark</code>.</p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

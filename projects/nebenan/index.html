@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Nebenan.de</title>
+<meta name="description" content="Role: iOS Developer">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//projects/nebenan/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Nebenan.de</h1>
+      <em class="post-meta">
+        <time>Sep, 2017</time>
+      </em>
+      <br />
+      <em class="post-meta">
+        A social network for connecting neighbours. It's a competitor of the Nextdoor on the european market.
+      </em>
+    </header>
+
+    <div class="post-content">
+      <p><strong>Role:</strong> iOS Developer</p>
+
+<p><strong>Team:</strong> 3 iOS Developers</p>
+
+<p><strong>Responsibility:</strong> Lead programming, developing CI</p>
+
+<p><strong>Technologies:</strong> <em>Swift</em>, <em>Autolayout</em>, <em>Ruby</em></p>
+
+<h4>Description</h4>
+<p>We use <code>XCTestCase</code> for live coding. We developed some helpers which allow to show a view or a view controller inside a test case. It allows us to develop UI and just run only one test case (mostly just run the latest test using ^⌥⌘G) to see result.</p>
+
+<p>We use modules – every part of the app is a dedicated module(framework). It’s very useful and allows to write tests more effective way.</p>
+
+<p>Our CI uses Ruby scripts for automation and PR checks. One of the parts of our CI is preparing PRs: it fetches latest available translations, checks, and if possible, update the code to match linter and formatting rules and commits it to the PR. A developer should fix only cases which CI couldn’t fix. Also, it sends result to the PR as a comment.</p>
+
+<p>Also, for this company I implemented a slack bot which could send slack messages to confluence pages, with this slack bot we tried to resolve a problem with outdated specifications and a lot of decisions about features right in the slack. This bot helps keep specifications up-to-date.</p>
+
+<h3>App</h3>
+<p><a href="https://itunes.apple.com/de/app/nebenan-de/id1148895169">App Store Page</a></p>
+
+<p><img width="200" src="/images/projects/nebenan/1.jpg" />
+<img width="200" src="/images/projects/nebenan/2.jpg" />
+<img width="200" src="/images/projects/nebenan/3.jpg" />
+<br />
+<img width="200" src="/images/projects/nebenan/4.jpg" />
+<img width="200" src="/images/projects/nebenan/5.jpg" /></p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

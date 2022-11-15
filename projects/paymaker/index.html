@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>PayMaker 2</title>
+<meta name="description" content="Role: macOS Developer">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//projects/paymaker/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">PayMaker 2</h1>
+      <em class="post-meta">
+        <time>Apr, 2017</time>
+      </em>
+      <br />
+      <em class="post-meta">
+        A macOS application which helps to manage and create your payments according to ISO 20022.
+      </em>
+    </header>
+
+    <div class="post-content">
+      <p><strong>Role:</strong> macOS Developer</p>
+
+<p><strong>Team:</strong> I’m only one developer on this project.</p>
+
+<p><strong>Responsibility:</strong> Developing the whole application.</p>
+
+<p><strong>Technologies:</strong> <em>CoreData</em>, <em>Swift</em>, <em>SQLite</em>, <em>Sparkle</em>, <em>Storyboards</em>, <em>Apple script</em></p>
+
+<h4>Description</h4>
+<p>The main purpose of the app is generating XML file according to ISO 20022 from payments, so a user can send this file to his bank. For that, I implemented ISO 20022 serialization along with DTA serialization since it’s still used by some banks in Switzerland.</p>
+
+<p>For the project, I implemented this <a href="https://github.com/AlexIzh/SearchQueryParser">parser</a> which allow combining queries by logical operands (kind of predicate). The app uses <em>NSPersistenceDocument</em> as default user’s document type (SQLite database which managed by <em>CoreData</em>) but at the same time, the app can work with a pure SQLite database for importing data from other platforms/products. For example, it uses SQLite for importing data from the window’s version. Also, data could be imported from CSV file, from the old version of PayMaker (it had another structure of the document and another SQLite DB structure) or from other applications. 
+For that, I implemented a CSV parser with supporting different delimiters, quotes and other things necessary for CSV. But it’s another talk.</p>
+
+<p>Also, since it’s an app about payments, I had to implement IBAN checking. For that, I implemented IBAN validator and formatter according to <a href="https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country">this document</a>. The validator uses BBAN format for validating.</p>
+
+<p>One more interesting feature is <code>smart folders</code>. It works and looks exactly like smart folders inside <code>Mail.app</code>.</p>
+
+<p>The application supports <code>Apple scripting</code> for exporting payments to user’s formats, like Numbers, iCash and so on. A user can write custom scripts which he needs and export data to any format he needs.</p>
+
+<p>Of course, there a lot of interesting things yet which I missed here, if you are interested, feel free to write an email to me.</p>
+
+<h3>App</h3>
+<p>You can download it <a href="https://shop.crealogix.com/software-updates/paymaker-2-0-mac.html">here!</a></p>
+
+<p><img src="/images/projects/paymaker/2.png" alt="text" />
+<img src="/images/projects/paymaker/1.png" alt="text" /></p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

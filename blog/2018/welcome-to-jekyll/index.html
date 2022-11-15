@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Parsing a string for generating custom search algorithm</title>
+<meta name="description" content="A small desctiption of this repository, particularly, algorithm of tokenizing a string.">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//blog/2018/welcome-to-jekyll/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Parsing a string for generating custom search algorithm</h1>
+      <em class="post-meta">
+        <time>Feb 6, 2018</time>
+      </em>
+    </header>
+
+    <div class="post-content">
+      
+      <p>A small desctiption of this <a href="https://github.com/AlexIzh/SearchQueryParser">repository</a>, particularly, algorithm of tokenizing a string.</p>
+
+<p>First, let’s define operator’s types. As we know, operators could be either binary or unary.</p>
+
+<pre><code class="language-swift">enum OperatorType {
+  case binary
+  case unary
+}
+</code></pre>
+
+<p>Also, operator should have priority, so we know which operator should be executed first if we get string without any brackets. Let’s define protocol which should be conformed by all operators:</p>
+
+<pre><code class="language-swift">protocol Operator: Hashable {
+  var priority: Int { get }
+  var type: OperatorType { get }
+}
+</code></pre>
+
+<p>Awesome! Now, all our operators could look like this:</p>
+
+<pre><code class="language-swift">public enum DefaultOperator: Int, Operator {
+  case not = 3, and = 2, or = 1
+
+  public var type: OperatorType { return self == .not ? .unary : .binary }
+  public var priority: Int { return self.rawValue }
+}
+</code></pre>
+
+<p>As you can see, <code>not</code> operator has highest priority and should be executed first, then <code>and</code> and last one <code>or</code>. Later we will use them for generating predicates (<code>NSPredicate</code>) or blocks/closures for filtering arrays.</p>
+
+<p>Now, let’s talk about parsing string. We have to get array of items sorted by priority of execution. In this example, we will prepare array for <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">reverse polish notation</a>. If we transform our string to RPN, we can easy to calculate final value and prepare it for predicates.</p>
+
+<p>First what we should do is separate every word by spaces and distinguish where string contains valid brackets and phrases. A phrase is a string inside two “ characters, they should be after space or bracket and before them respectively. 
+Algorith for this is a quite simple, pseudocode looks like this:</p>
+
+<pre><code class="language-swift">We have to have a few stores: 
+- Store with indexes of opening brackets
+- Store with tokens (this store will be returned)
+- Store with a context
+
+Go through all characters in the string
+If the character is a space
+- Save value from the context store to the tokens store
+
+If the character is a " symbol and it's a valid place for new token 
+  (the previous character is a space or an opening bracket)
+- Collect characters until we get the end of the string or valid closing phrase character 
+  (" character at the end of the string or before a space or a closing bracket) 
+- If we get valid closing phrase character, save it as a phrase into the tokens store
+
+If the character is a opening bracket and it's a valid place for new token
+- Save and reset current context, save empty token into the tokens store and save index of this token into brackets store
+  (into this token we will put the bracket if we found valid closing bracket character)
+
+If the character is a closing bracket and it's a valid place for this 
+  (it's the end of the string or next character is a space or a closing bracket)
+- Get position of last opening bracket and get empty token which we saved before, 
+  save opening bracket to this token, save current context and save closing bracket after it,
+  remove index of the opening bracket from the store
+
+If no one conditions are met
+- Save the character to the context store
+
+After it, we can to finish our preparations:
+- Save value from the context store to the tokens store
+- Go through brackets store and add an opening bracket to the token with the index which we get from the store
+  (it's needed for appending invalid opening brackets to a right place)
+- Remove all empty tokens from the tokens store
+</code></pre>
+
+<p>Quite easy, doesn’t it? You can look at the code <a href="https://github.com/AlexIzh/SearchQueryParser/blob/master/SearchQueryParser/SearchQueryParser/TokensGenerator.swift">here</a>.</p>
+
+<p>After that, we can prepare the result for <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">RPN</a> but it isn’t part of the article already.</p>
+
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

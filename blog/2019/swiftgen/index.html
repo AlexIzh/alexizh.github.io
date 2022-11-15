@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>SwiftGen Postprocessing</title>
+<meta name="description" content="Today I want to talk about localizations, in particular, about passing parameters into localization strings.I will assume that we all use SwiftGen but probab...">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//blog/2019/swiftgen/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">SwiftGen Postprocessing</h1>
+      <em class="post-meta">
+        <time>Apr 30, 2019</time>
+      </em>
+    </header>
+
+    <div class="post-content">
+      
+      <p>Today I want to talk about localizations, in particular, about passing parameters into localization strings.
+I will assume that we all use <code>SwiftGen</code> but probably it also related to <code>R.swift</code> and some other generators.</p>
+
+<p>So, how could we pass parameters inside localizations? <code>SwiftGen</code> supports all (or almost all) default placeholders used inside <code>NSLog</code>. That’s cool but sometimes it’s not enough. Unfortunately, exist cases when developers and translators should understand what this placeholder means and why it’s here. 
+Small examples:</p>
+
+<pre><code>"notifications.max_speed" = "Max speed of %d %@ exceeded";
+"email.name" = "Hello %@ %@,";
+"contact.address" = "Our address: %1$s %2$s";
+</code></pre>
+
+<p>Will you understand what should be displayed there? I - won’t. Let’s see what <code>SwiftGen</code> will generate for us, maybe it will be better:</p>
+
+<pre><code class="language-swift">internal enum L10n {
+  internal enum Notifications {
+    /// Max speed of %d %@ exceeded
+    internal static func maxSpeed(_ p1: Int, _ p2: String) -&gt; String {}
+  }
+  internal enum Email {
+    /// Hello %@ %@,
+    internal static func name(_ p1: String, _ p2: String) -&gt; String {}
+  }
+  internal enum Contact {
+    /// Our address: %1$s %2$s
+    internal static func address(_ p1: String, _ p2: String) -&gt; String {}
+  }
+}
+</code></pre>
+<p>is it better? I don’t think so.</p>
+
+<p>Of course, we can wait until <a href="https://github.com/SwiftGen/SwiftGen/issues/242">this issue</a> will be closed but let’s be honest, it doesn’t seem anyone to care about that anymore. So let’s “fix” it ourselves.</p>
+
+<p>The next solution will support parsing placeholders like <code>{something}</code> or <code>{SOMETHING}</code>. Of course, we can add any other types of placeholders, it’s very easy.</p>
+
+<p>Okay, good, what now? 
+if we replace our string with the next supported new placeholders, we will get the next:</p>
+
+<pre><code>"notifications.max_speed" = "Max speed of {value} {unit} exceeded";
+"email.name" = "Hello {first_name} {second_name},";/// or vice versa? it could be related to a locale ;)
+"contact.address" = "Our address: {street} {building_number}";/// like this one as well
+</code></pre>
+
+<p>and now we will have simple variables after code generation:</p>
+
+<pre><code class="language-swift">/// Max speed of {value} {unit} exceeded
+static let maxSpeed = L10n.tr("Localizable", "notifications.max_speed")
+/// Hello {first_name} {second_name},
+static let name = L10n.tr("Localizable", "email.name")
+/// Our address: {street} {building_number}
+static let address = L10n.tr("Localizable", "contact.address")
+</code></pre>
+
+<p>Okay, now we can understand what it means and translate/use it as we want. Only problem is now we have to use</p>
+
+<pre><code class="language-swift">label.text = L10n.email.name.replacingOccurrences(of: "{first_name}", with: firstName).replacingOccurrences(of: "{second_name}", with: secondName)
+</code></pre>
+
+<p>Not so good, right? what if the parameters are changed or a developer made a typo?</p>
+
+<p>First of all, we have to find out how could we fix that. Instead of taking care about <code>SwiftGetKit</code> which could take quite a lot of time just on understanding what’s going on there and how to add a new functionality (and always exists a chance that this isn’t supported by architecture/chosen solutions, and for that we have to re-write almost whole <code>SwiftGenKit</code>), I purpose to just create a script which will run right after <code>SwiftGen</code> and will update the generated file.</p>
+
+<p>Let’s see how <code>SwiftGen</code> generated file looks from our perspective:</p>
+
+<pre><code>/// {translation_value}
+{indent}{access control}static let {variable} = L10n.tr("Localizable", "{translation_key}")
+</code></pre>
+
+<p>Looks interesting, seems like we can get all necessary information from it. Let’s start to code: 
+(I will use stream class from <a href="https://stackoverflow.com/questions/24581517/read-a-file-url-line-by-line-in-swift">here</a>, so we can load a file line-by-line and don’t load the whole file into RAM)</p>
+
+<p>First, we have to find a comment</p>
+
+<pre><code class="language-swift">/// save the line
+defer { output?.write(line) }
+
+/// find an index of first non-space character
+guard let startIndex = line.firstIndex(where: { $0 != " " }),
+  let endIndex = line.index(startIndex, offsetBy: 3, limitedBy: line.endIndex) else {
+  continue
+}
+
+/// check first 3 non-space characters of the line. It should be `///` for SwiftGen comment
+if line[startIndex..&lt;endIndex] == "///" {
+  prevPlaceholders = analyzeComment(line)
+}
+</code></pre>
+
+<p>Then, we have to analyze this comment and try to fetch placeholders from it:</p>
+
+<pre><code class="language-swift">func analyzeComment(_ line: String) -&gt; [String] {
+  /// \{\S+?\} - regex for our type  of placeholder. It could be replaced with supporting any other type. 
+  /// but it should contains a group which has got a placeholder name.
+  let placeholderPattern = "\\{(\\S+?)\\}"
+  let placeholderRegex = try! NSRegularExpression(pattern: placeholderPattern, options: [])
+  let matches = placeholderRegex.matches(in: line, options: [], range: line.nsrange)
+  var set: Set&lt;String&gt; = [] /// we don't want to get duplicates
+  return matches.compactMap {
+    /// first group - placeholder's name
+    let placeholder = String(line.substring(with: $0.range(at: 1))!)
+    defer { set.insert(placeholder) }
+    return set.contains(placeholder) ? nil : placeholder
+  }
+}
+</code></pre>
+
+<p>Great, now we can recognize all placeholders from a comment line. As we can see, the next line after such comment should be replaced with generated function. And we have saved placeholders to the <code>prevPlaceholders</code> array as you can see above.
+So, if it’s a new line and <code>prevPlaceholders</code> isn’t empty then it means we have to replace the line with the generated function. But we need to know how many spaces we should put, what name of the function should be, what access control of the function should be and that’s probably all.</p>
+
+<pre><code class="language-swift">let pattern = "(\\s*)(.*?) static let (.*?) = (.*)\n"
+let regex = try! NSRegularExpression(pattern: pattern, options: [])
+guard let match = regex.firstMatch(in: line, options: [], range: line.nsrange) else {
+  /// Something wrong, save the line to the result file
+  output?.write(line)
+  continue
+}
+
+let spaces = String(line.substring(with: match.range(at: 1))!) 
+let accessControl = String(line.substring(with: match.range(at: 2))!)
+let variable = String(line.substring(with: match.range(at: 3))!)
+let translation = String(line.substring(with: match.range(at: 4))!)
+    
+/// Generate function
+var function = "\(spaces)\(accessControl) static func \(variable)("
+function += prevPlaceholders.map { "\(name(from: $0)): String" }.joined(separator: ", ")
+function += ") {\n\(spaces+indent)var result: String = \(translation)\n\(spaces+indent)"
+function += prevPlaceholders.map { "result = result.replacingOccurrences(of: \"{\($0)}\", with: \($0.lowercased()))" }.joined(separator: "\n\(spaces+indent)")
+function += "\n\(spaces+indent)return result\n\(spaces)}\n"
+
+/// write the function to the file instead of the line
+output?.write(function)
+</code></pre>
+
+<p>And that’s all. As result you will see:</p>
+
+<pre><code class="language-swift">internal enum L10n {
+  internal enum Notifications {
+    /// Max speed of {value} {unit} exceeded
+    internal static func maxSpeed(value: String, unit: String) -&gt; String {
+      var result = L10n.tr("Localizable", "notifications.max_speed")
+      result = result.replacingOccurrences(of: "{value}", with: value)
+      result = result.replacingOccurrences(of: "{unit}", with: unit)
+      return result
+    }
+  }
+  internal enum Email {
+    /// Hello {first_name} {second_name},
+    internal static func name(firstName: String, secondName: String) -&gt; String {}
+  }
+  internal enum Contact {
+    /// Our address: {street} {building_number}
+    internal static func address(street: String, buildingNumber: String) -&gt; String {}
+  }
+}
+</code></pre>
+<p>And as result, you don’t care will it be <code>Hello {first_name} {second_name}</code> or <code>Hello {second_name} {first_name}</code>, it will work the same and your code will not need to be changed! Could you do that with <code>Hello %@ %@</code>?</p>
+
+<p><a href="https://gist.github.com/AlexIzh/62bb1264a8614beb16d3bc8bace56615">The whole script you can see here</a></p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

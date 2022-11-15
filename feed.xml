@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>AlexIzh</title>
+    <description>My portfolio site.</description>
+    <link>https://alexizh.github.io//</link>
+    <atom:link href="https://alexizh.github.io//feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Tue, 15 Nov 2022 18:49:25 +0400</pubDate>
+    <lastBuildDate>Tue, 15 Nov 2022 18:49:25 +0400</lastBuildDate>
+    <generator>Jekyll v4.3.1</generator>
+    
+      <item>
+        <title>Funny push transition bug</title>
+        <description>&lt;h3 id=&quot;preview-of-the-bug&quot;&gt;Preview of the bug&lt;/h3&gt;
+
+&lt;p&gt;&lt;img height=&quot;700&quot; src=&quot;/images/blog/bug_preview.gif&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;description&quot;&gt;Description&lt;/h3&gt;
+
+&lt;p&gt;If a pushed view controller has an input accessory view (overridden &lt;code&gt;inputAccessoryView&lt;/code&gt; method and a non-nill view is returned from there), then when any text input view calls &lt;code&gt;becomeFirstResponder&lt;/code&gt; before push animation has been done, push animation is repeated (see the preview).&lt;/p&gt;
+
+&lt;p&gt;So, to show the bug just enough to implement:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;override var inputAccessoryView: UIView? {
+  return UIView()
+}
+
+override var canBecomeFirstResponder: Bool {
+  return true
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And just to call &lt;code&gt;becomeFirstResponder&lt;/code&gt; before &lt;code&gt;viewDidAppear&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;override func viewDidLoad() {
+  super.viewDidLoad()
+  DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+    self.contentTextField.becomeFirstResponder()
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That’s all, now when this controller will be pushed into &lt;code&gt;UINavigationViewController&lt;/code&gt; you will see the bug.&lt;/p&gt;
+
+&lt;p&gt;One interesting case that if to remove either &lt;code&gt;inputAccessoryView&lt;/code&gt; or &lt;code&gt;canBecomeFirstResponder&lt;/code&gt; method (implement only one of them), then the animation will be a bit different (no less terrible though).&lt;/p&gt;
+
+&lt;p&gt;&lt;img height=&quot;700&quot; src=&quot;/images/blog/bug_preview_2.gif&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;fix&quot;&gt;Fix&lt;/h3&gt;
+
+&lt;p&gt;In case when you need to use &lt;code&gt;inpuAccessoryView&lt;/code&gt; or &lt;code&gt;canBecomeFirstResponder&lt;/code&gt; on a view controller, you should be sure that all &lt;code&gt;becomeFirstResponder&lt;/code&gt; methods are called only after or inside &lt;code&gt;viewDidAppear&lt;/code&gt; method.&lt;/p&gt;
+
+&lt;p&gt;For example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;var isViewAppeared = false {
+   didSet { showKeyboardIfNecessary() } 
+}
+
+weak var targetInput: UIResponder? { 
+  didSet { showKeyboardIfNecessary() } 
+}
+
+override func viewDidLoad() {
+  super.viewDidLoad()
+  DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { /// any load operation here
+    self.targetInput = someView
+  }
+}
+
+override func viewDidAppear() {
+  super.viewDidAppear()
+  isViewAppeared = true
+}
+
+func showKeyboardIfNecessary() {
+  if let input = targetInput, isViewAppeared {
+    input.becomeFirstResponder()
+  }
+  targetInput = nil
+}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Mon, 24 Jun 2019 17:52:35 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2019/animation-bug/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2019/animation-bug/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>SwiftGen Postprocessing</title>
+        <description>&lt;p&gt;Today I want to talk about localizations, in particular, about passing parameters into localization strings.
+I will assume that we all use &lt;code&gt;SwiftGen&lt;/code&gt; but probably it also related to &lt;code&gt;R.swift&lt;/code&gt; and some other generators.&lt;/p&gt;
+
+&lt;p&gt;So, how could we pass parameters inside localizations? &lt;code&gt;SwiftGen&lt;/code&gt; supports all (or almost all) default placeholders used inside &lt;code&gt;NSLog&lt;/code&gt;. That’s cool but sometimes it’s not enough. Unfortunately, exist cases when developers and translators should understand what this placeholder means and why it’s here. 
+Small examples:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&quot;notifications.max_speed&quot; = &quot;Max speed of %d %@ exceeded&quot;;
+&quot;email.name&quot; = &quot;Hello %@ %@,&quot;;
+&quot;contact.address&quot; = &quot;Our address: %1$s %2$s&quot;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Will you understand what should be displayed there? I - won’t. Let’s see what &lt;code&gt;SwiftGen&lt;/code&gt; will generate for us, maybe it will be better:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;internal enum L10n {
+  internal enum Notifications {
+    /// Max speed of %d %@ exceeded
+    internal static func maxSpeed(_ p1: Int, _ p2: String) -&amp;gt; String {}
+  }
+  internal enum Email {
+    /// Hello %@ %@,
+    internal static func name(_ p1: String, _ p2: String) -&amp;gt; String {}
+  }
+  internal enum Contact {
+    /// Our address: %1$s %2$s
+    internal static func address(_ p1: String, _ p2: String) -&amp;gt; String {}
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;is it better? I don’t think so.&lt;/p&gt;
+
+&lt;p&gt;Of course, we can wait until &lt;a href=&quot;https://github.com/SwiftGen/SwiftGen/issues/242&quot;&gt;this issue&lt;/a&gt; will be closed but let’s be honest, it doesn’t seem anyone to care about that anymore. So let’s “fix” it ourselves.&lt;/p&gt;
+
+&lt;p&gt;The next solution will support parsing placeholders like &lt;code&gt;{something}&lt;/code&gt; or &lt;code&gt;{SOMETHING}&lt;/code&gt;. Of course, we can add any other types of placeholders, it’s very easy.&lt;/p&gt;
+
+&lt;p&gt;Okay, good, what now? 
+if we replace our string with the next supported new placeholders, we will get the next:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&quot;notifications.max_speed&quot; = &quot;Max speed of {value} {unit} exceeded&quot;;
+&quot;email.name&quot; = &quot;Hello {first_name} {second_name},&quot;;/// or vice versa? it could be related to a locale ;)
+&quot;contact.address&quot; = &quot;Our address: {street} {building_number}&quot;;/// like this one as well
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and now we will have simple variables after code generation:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;/// Max speed of {value} {unit} exceeded
+static let maxSpeed = L10n.tr(&quot;Localizable&quot;, &quot;notifications.max_speed&quot;)
+/// Hello {first_name} {second_name},
+static let name = L10n.tr(&quot;Localizable&quot;, &quot;email.name&quot;)
+/// Our address: {street} {building_number}
+static let address = L10n.tr(&quot;Localizable&quot;, &quot;contact.address&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Okay, now we can understand what it means and translate/use it as we want. Only problem is now we have to use&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;label.text = L10n.email.name.replacingOccurrences(of: &quot;{first_name}&quot;, with: firstName).replacingOccurrences(of: &quot;{second_name}&quot;, with: secondName)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Not so good, right? what if the parameters are changed or a developer made a typo?&lt;/p&gt;
+
+&lt;p&gt;First of all, we have to find out how could we fix that. Instead of taking care about &lt;code&gt;SwiftGetKit&lt;/code&gt; which could take quite a lot of time just on understanding what’s going on there and how to add a new functionality (and always exists a chance that this isn’t supported by architecture/chosen solutions, and for that we have to re-write almost whole &lt;code&gt;SwiftGenKit&lt;/code&gt;), I purpose to just create a script which will run right after &lt;code&gt;SwiftGen&lt;/code&gt; and will update the generated file.&lt;/p&gt;
+
+&lt;p&gt;Let’s see how &lt;code&gt;SwiftGen&lt;/code&gt; generated file looks from our perspective:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;/// {translation_value}
+{indent}{access control}static let {variable} = L10n.tr(&quot;Localizable&quot;, &quot;{translation_key}&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Looks interesting, seems like we can get all necessary information from it. Let’s start to code: 
+(I will use stream class from &lt;a href=&quot;https://stackoverflow.com/questions/24581517/read-a-file-url-line-by-line-in-swift&quot;&gt;here&lt;/a&gt;, so we can load a file line-by-line and don’t load the whole file into RAM)&lt;/p&gt;
+
+&lt;p&gt;First, we have to find a comment&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;/// save the line
+defer { output?.write(line) }
+
+/// find an index of first non-space character
+guard let startIndex = line.firstIndex(where: { $0 != &quot; &quot; }),
+  let endIndex = line.index(startIndex, offsetBy: 3, limitedBy: line.endIndex) else {
+  continue
+}
+
+/// check first 3 non-space characters of the line. It should be `///` for SwiftGen comment
+if line[startIndex..&amp;lt;endIndex] == &quot;///&quot; {
+  prevPlaceholders = analyzeComment(line)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then, we have to analyze this comment and try to fetch placeholders from it:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;func analyzeComment(_ line: String) -&amp;gt; [String] {
+  /// \{\S+?\} - regex for our type  of placeholder. It could be replaced with supporting any other type. 
+  /// but it should contains a group which has got a placeholder name.
+  let placeholderPattern = &quot;\\{(\\S+?)\\}&quot;
+  let placeholderRegex = try! NSRegularExpression(pattern: placeholderPattern, options: [])
+  let matches = placeholderRegex.matches(in: line, options: [], range: line.nsrange)
+  var set: Set&amp;lt;String&amp;gt; = [] /// we don&apos;t want to get duplicates
+  return matches.compactMap {
+    /// first group - placeholder&apos;s name
+    let placeholder = String(line.substring(with: $0.range(at: 1))!)
+    defer { set.insert(placeholder) }
+    return set.contains(placeholder) ? nil : placeholder
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Great, now we can recognize all placeholders from a comment line. As we can see, the next line after such comment should be replaced with generated function. And we have saved placeholders to the &lt;code&gt;prevPlaceholders&lt;/code&gt; array as you can see above.
+So, if it’s a new line and &lt;code&gt;prevPlaceholders&lt;/code&gt; isn’t empty then it means we have to replace the line with the generated function. But we need to know how many spaces we should put, what name of the function should be, what access control of the function should be and that’s probably all.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;let pattern = &quot;(\\s*)(.*?) static let (.*?) = (.*)\n&quot;
+let regex = try! NSRegularExpression(pattern: pattern, options: [])
+guard let match = regex.firstMatch(in: line, options: [], range: line.nsrange) else {
+  /// Something wrong, save the line to the result file
+  output?.write(line)
+  continue
+}
+
+let spaces = String(line.substring(with: match.range(at: 1))!) 
+let accessControl = String(line.substring(with: match.range(at: 2))!)
+let variable = String(line.substring(with: match.range(at: 3))!)
+let translation = String(line.substring(with: match.range(at: 4))!)
+    
+/// Generate function
+var function = &quot;\(spaces)\(accessControl) static func \(variable)(&quot;
+function += prevPlaceholders.map { &quot;\(name(from: $0)): String&quot; }.joined(separator: &quot;, &quot;)
+function += &quot;) {\n\(spaces+indent)var result: String = \(translation)\n\(spaces+indent)&quot;
+function += prevPlaceholders.map { &quot;result = result.replacingOccurrences(of: \&quot;{\($0)}\&quot;, with: \($0.lowercased()))&quot; }.joined(separator: &quot;\n\(spaces+indent)&quot;)
+function += &quot;\n\(spaces+indent)return result\n\(spaces)}\n&quot;
+
+/// write the function to the file instead of the line
+output?.write(function)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And that’s all. As result you will see:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;internal enum L10n {
+  internal enum Notifications {
+    /// Max speed of {value} {unit} exceeded
+    internal static func maxSpeed(value: String, unit: String) -&amp;gt; String {
+      var result = L10n.tr(&quot;Localizable&quot;, &quot;notifications.max_speed&quot;)
+      result = result.replacingOccurrences(of: &quot;{value}&quot;, with: value)
+      result = result.replacingOccurrences(of: &quot;{unit}&quot;, with: unit)
+      return result
+    }
+  }
+  internal enum Email {
+    /// Hello {first_name} {second_name},
+    internal static func name(firstName: String, secondName: String) -&amp;gt; String {}
+  }
+  internal enum Contact {
+    /// Our address: {street} {building_number}
+    internal static func address(street: String, buildingNumber: String) -&amp;gt; String {}
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And as result, you don’t care will it be &lt;code&gt;Hello {first_name} {second_name}&lt;/code&gt; or &lt;code&gt;Hello {second_name} {first_name}&lt;/code&gt;, it will work the same and your code will not need to be changed! Could you do that with &lt;code&gt;Hello %@ %@&lt;/code&gt;?&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://gist.github.com/AlexIzh/62bb1264a8614beb16d3bc8bace56615&quot;&gt;The whole script you can see here&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Tue, 30 Apr 2019 23:52:35 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2019/swiftgen/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2019/swiftgen/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Modulemap&apos;s problem</title>
+        <description>&lt;p&gt;The issue related to all frameworks which use &lt;code&gt;modulemap&lt;/code&gt; inside. Easiest way to reproduce it - to build a framework(manually or via carthage) and then remove/move sources to another folder. 
+Example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;carthage update
+mv Carthage/Checkout Carthage/Checkout_
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;Why does it happen?&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Seems like when a framework project contains a module with C code and as a result of a module map to this code, then the resulting framework will contain links to the same C code with absolute paths. You can see that inside &lt;code&gt;Zip.framework/Modules/Zip.swiftmodule/&lt;/code&gt; or &lt;code&gt;Down.framework/Modules/Down.swiftmodule/&lt;/code&gt;. Just open any swiftmodule file with any text editor and look for old modulemap path. 
+I mean, this C code/headers(maybe just headers, not sure about that) should be placed at the same place for using the framework, otherwise, framework won’t find this C-module (in the case of Zip - &lt;code&gt;minizip&lt;/code&gt;, in the case of Down - &lt;code&gt;cmark&lt;/code&gt;)&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Workaround&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;The only workaround what I’ve found is to copy &lt;code&gt;minizip&lt;/code&gt;/&lt;code&gt;cmark&lt;/code&gt; folder(folder with the C code) to inside your project (where you have to use the framework) and configure &lt;code&gt;Import Paths&lt;/code&gt; to this directory. Then, when the framework has to find a missing module, it will use the project settings (the module is configured and load to the project already). 
+So, either do not remove &lt;code&gt;Checkout&lt;/code&gt; directory for carthage (because the framework will look for the module there) and as result do not use any caches for carthage (like rome), or add &lt;code&gt;minizip&lt;/code&gt;/&lt;code&gt;cmark&lt;/code&gt; directory to your project and configure &lt;code&gt;Import Paths&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Bridging-Header solution&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;If we remove a modulemap and add a Bridging-Header to the project, then it will work vice versa. It won’t work if sources are there (if you build it through carthage and do not remove Checkouts directory). In that case, you will have a &lt;code&gt;Failed to import bridging header&lt;/code&gt; error when trying to build your project. For this solution source code shouldn’t be available at the path which used for building the framework (manually or carthage, doesn’t matter).&lt;/p&gt;
+
+&lt;p&gt;Projects with this problem:&lt;br /&gt;
+&lt;a href=&quot;https://github.com/iwasrobbed/Down/issues/120&quot;&gt;Down&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/marmelroy/Zip/issues/134&quot;&gt;Zip&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Fri, 30 Nov 2018 23:52:35 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2018/modulemap/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2018/modulemap/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Simple CSV parsing</title>
+        <description>&lt;p&gt;Just a simple CSV parser. It supports quotes and setting a delimiter. It doesn’t support nested quotes.
+The algorithm is pretty easy:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;if a character is a quote and saved value is empty (no new value after delimiter) - start “quote” mode&lt;/li&gt;
+  &lt;li&gt;if the character is a delimiter, save the value if:
+– previous non-space character is not a quote
+– it is not a quote mode (inside this value the first quote is not a first non-empty character)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Of course, probably it doesn’t cover all edge cases but it works quite well in simple data. And if it doesn’t work, we always can say about it to a user so he can fix it manually (CSV file of course, not this algorithm).&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;class CSVLineParser {
+  typealias Field = String
+
+  var delimiter: Character
+
+  init(delimiter: Character = &quot;\t&quot;) {
+    self.delimiter = delimiter
+  }
+
+  func parse(_ line: String) -&amp;gt; [Field] {
+    var iterator = line.makeIterator()
+    var fields: [Field] = []
+    var currentField: Field = &quot;&quot;
+    var isQuoted = false
+    var lastNonSpaceCharacter: Character?
+
+    func isFinishQuoted() -&amp;gt; Bool {
+      let field = currentField.trimmingCharacters(in: .whitespaces)
+      return isQuoted &amp;amp;&amp;amp; lastNonSpaceCharacter == &quot;\&quot;&quot; &amp;amp;&amp;amp; field.count != 1
+    }
+
+    func append() {
+      var field = currentField.trimmingCharacters(in: .whitespaces)
+      if isFinishQuoted() {
+        field.removeFirst()
+        field.removeLast()
+      }
+      fields.append(field)
+      currentField = &quot;&quot;
+      isQuoted = false
+      lastNonSpaceCharacter = nil
+    }
+
+    while let character = iterator.next() {
+      if currentField.isEmpty &amp;amp;&amp;amp; character == &quot; &quot; {
+        continue
+      }
+      if currentField.isEmpty &amp;amp;&amp;amp; character == &quot;\&quot;&quot; {
+        currentField.append(character)
+        isQuoted = true
+        continue
+      }
+      if character == delimiter &amp;amp;&amp;amp; (isFinishQuoted() || !isQuoted) {
+        append()
+        continue
+      }
+      if character != &quot; &quot; {
+        lastNonSpaceCharacter = character
+      }
+      currentField.append(character)
+    }
+    append()
+    return fields
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tests:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;func test() {
+    let parser = CSVLineParser()
+    parser.delimiter = &quot;;&quot;
+
+    XCTAssertEqual(parser.parse(&quot;1;2;3&quot;), [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;2\&quot;;3&quot;), [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;  \&quot;2;3&quot;), [&quot;1&quot;, &quot;\&quot;  \&quot;2;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;  2  \&quot;;3&quot;), [&quot;1&quot;, &quot;  2  &quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;;\&quot;;3&quot;), [&quot;1&quot;, &quot;;&quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;;\&quot;;;3&quot;), [&quot;1&quot;, &quot;;&quot;, &quot;&quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;  ;   \&quot;;3&quot;), [&quot;1&quot;, &quot;  ;   &quot;, &quot;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot;  \&quot;    ;   \&quot;;3&quot;), [&quot;1&quot;, &quot;  &quot;, &quot;\&quot;;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;\&quot; ; 2323;\&quot;\&quot;2;2\&quot;\&quot;\&quot;    ;   \&quot;;3&quot;), [&quot;1&quot;, &quot; ; 2323;\&quot;\&quot;2;2\&quot;\&quot;&quot;, &quot;\&quot;;3&quot;])
+    XCTAssertEqual(parser.parse(&quot;1;23 \&quot; 23;32 \&quot; 32;3&quot;), [&quot;1&quot;, &quot;23 \&quot; 23&quot;, &quot;32 \&quot; 32&quot;, &quot;3&quot;])
+
+    XCTAssertEqual(parser.parse(&quot;1;&quot;), [&quot;1&quot;, &quot;&quot;])
+  }
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Wed, 22 Aug 2018 20:39:18 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2018/csv/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2018/csv/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Comparing markdown swift libraries</title>
+        <description>&lt;p&gt;Today I’ll compare and try to choose a library for parsing and displaying markdown inside swift environment (mostly iOS).&lt;/p&gt;
+
+&lt;p&gt;Let’s start with the performance. I took a quite simple markdown file and compared the performance of each library. Results here (in seconds):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;2/ `Down` (based on cmark) from markdown to an attributed string: ~0.12 
+3/ Marky-Mark: ~0.07
+4/ SwiftyMarkdown (parser which is not using regular expressions, but scanning a string manually instead) - ~0.02
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So, from the first view, the conclusion is simple - the library with a custom parsing algorithm is the best (second position in performance), but library based on C-library is slowest (could it ever be at all?). But don’t be so fast, let’s look at it a bit deeper.&lt;/p&gt;
+
+&lt;p&gt;Why &lt;code&gt;Down&lt;/code&gt; is so slow? After opening sources, we can see that cmark doesn’t support converting markdown to &lt;code&gt;NSAttributedString&lt;/code&gt; (not a surprise). It supports xml, html, latex, etc. So, for getting an attributed string we need to convert markdown file to &lt;code&gt;html/xml&lt;/code&gt; and then to &lt;code&gt;NSAttributedString&lt;/code&gt;. Let’s check how much time necessary for the every step:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1/ Markdown to HTML - ~0.001s - Wow! That&apos;s incredibly fast! (commonly, it takes from 0.0006 to 0.0008, but sometimes 0.0012 or 0.0010)
+2/ HTML to NSAttributedString (which is done by standard Apple way) - ~0.115
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And here what we have. C-library is awesome, fastest way to do it, but at the same time, if we want to get &lt;code&gt;NSAttributedString&lt;/code&gt; from this, we have to think how how time/performance matters for us. Or, we can find/develop another solution how can we convert cmark to &lt;code&gt;NSAttributedString&lt;/code&gt;. For example, it could be an updating of cmark library to provide custom attributes from which we can easily create &lt;code&gt;NSAttributedString&lt;/code&gt; (so we won’t have &lt;code&gt;html&lt;/code&gt; layer between). I would really be excited if someone implemented it!&lt;/p&gt;
+
+&lt;p&gt;Conclusions:
+&lt;em&gt;Down:&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;incredibly fast for converting markdown to html/latex/xml&lt;/li&gt;
+  &lt;li&gt;Full supporting of markdown&lt;/li&gt;
+  &lt;li&gt;really slow for using in the iOS, because html -&amp;gt; NSAttributedString is slow&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;Marky-Mark:&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;not so fast&lt;/li&gt;
+  &lt;li&gt;has some problems with rendering when using their text view&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;SwiftMarkdown:&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;fastest way to get NSAttributedString from markdown in ios&lt;/li&gt;
+  &lt;li&gt;doesn’t support links inside bold text&lt;/li&gt;
+  &lt;li&gt;doesn’t support &lt;code&gt;code blocks&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;What do we have at the end?&lt;/em&gt;
+In the network a lot of libraries which doesn’t use cmark library for parsing markdown. Some of them use regex, some - custom scanning. 
+Libraries with regex could be easy to maintained and updated/added new features, libraries which use custom scanning could be maintained very difficult because necessary to be involved in the whole algorithm. If you need to have the fastest way to do that - use either cmark or custom scanning algorithm. If you need to have good maintenance - use regex, but when you have a lot of rules + quite big markdown file, use a different thread for parsing and generating an attributed string. If you need to support maximum markdown features, use &lt;code&gt;Down&lt;/code&gt; or any library based on &lt;code&gt;cmark&lt;/code&gt;.&lt;/p&gt;
+</description>
+        <pubDate>Tue, 10 Jul 2018 23:52:35 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2018/markdown-libraries/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2018/markdown-libraries/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Parsing a string for generating custom search algorithm</title>
+        <description>&lt;p&gt;A small desctiption of this &lt;a href=&quot;https://github.com/AlexIzh/SearchQueryParser&quot;&gt;repository&lt;/a&gt;, particularly, algorithm of tokenizing a string.&lt;/p&gt;
+
+&lt;p&gt;First, let’s define operator’s types. As we know, operators could be either binary or unary.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;enum OperatorType {
+  case binary
+  case unary
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Also, operator should have priority, so we know which operator should be executed first if we get string without any brackets. Let’s define protocol which should be conformed by all operators:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;protocol Operator: Hashable {
+  var priority: Int { get }
+  var type: OperatorType { get }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Awesome! Now, all our operators could look like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;public enum DefaultOperator: Int, Operator {
+  case not = 3, and = 2, or = 1
+
+  public var type: OperatorType { return self == .not ? .unary : .binary }
+  public var priority: Int { return self.rawValue }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see, &lt;code&gt;not&lt;/code&gt; operator has highest priority and should be executed first, then &lt;code&gt;and&lt;/code&gt; and last one &lt;code&gt;or&lt;/code&gt;. Later we will use them for generating predicates (&lt;code&gt;NSPredicate&lt;/code&gt;) or blocks/closures for filtering arrays.&lt;/p&gt;
+
+&lt;p&gt;Now, let’s talk about parsing string. We have to get array of items sorted by priority of execution. In this example, we will prepare array for &lt;a href=&quot;https://en.wikipedia.org/wiki/Reverse_Polish_notation&quot;&gt;reverse polish notation&lt;/a&gt;. If we transform our string to RPN, we can easy to calculate final value and prepare it for predicates.&lt;/p&gt;
+
+&lt;p&gt;First what we should do is separate every word by spaces and distinguish where string contains valid brackets and phrases. A phrase is a string inside two “ characters, they should be after space or bracket and before them respectively. 
+Algorith for this is a quite simple, pseudocode looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;We have to have a few stores: 
+- Store with indexes of opening brackets
+- Store with tokens (this store will be returned)
+- Store with a context
+
+Go through all characters in the string
+If the character is a space
+- Save value from the context store to the tokens store
+
+If the character is a &quot; symbol and it&apos;s a valid place for new token 
+  (the previous character is a space or an opening bracket)
+- Collect characters until we get the end of the string or valid closing phrase character 
+  (&quot; character at the end of the string or before a space or a closing bracket) 
+- If we get valid closing phrase character, save it as a phrase into the tokens store
+
+If the character is a opening bracket and it&apos;s a valid place for new token
+- Save and reset current context, save empty token into the tokens store and save index of this token into brackets store
+  (into this token we will put the bracket if we found valid closing bracket character)
+
+If the character is a closing bracket and it&apos;s a valid place for this 
+  (it&apos;s the end of the string or next character is a space or a closing bracket)
+- Get position of last opening bracket and get empty token which we saved before, 
+  save opening bracket to this token, save current context and save closing bracket after it,
+  remove index of the opening bracket from the store
+
+If no one conditions are met
+- Save the character to the context store
+
+After it, we can to finish our preparations:
+- Save value from the context store to the tokens store
+- Go through brackets store and add an opening bracket to the token with the index which we get from the store
+  (it&apos;s needed for appending invalid opening brackets to a right place)
+- Remove all empty tokens from the tokens store
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Quite easy, doesn’t it? You can look at the code &lt;a href=&quot;https://github.com/AlexIzh/SearchQueryParser/blob/master/SearchQueryParser/SearchQueryParser/TokensGenerator.swift&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;After that, we can prepare the result for &lt;a href=&quot;https://en.wikipedia.org/wiki/Reverse_Polish_notation&quot;&gt;RPN&lt;/a&gt; but it isn’t part of the article already.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 06 Feb 2018 23:52:35 +0400</pubDate>
+        <link>https://alexizh.github.io//blog/2018/welcome-to-jekyll/</link>
+        <guid isPermaLink="true">https://alexizh.github.io//blog/2018/welcome-to-jekyll/</guid>
+        
+        
+      </item>
+    
+  </channel>
+</rss>

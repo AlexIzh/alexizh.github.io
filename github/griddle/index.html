@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Griddle</title>
+<meta name="description" content="It’s another one layer for working with collections with one interface and minimize distinguishing it inside your code.Except for default behavior like suppo...">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//github/griddle/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Griddle</h1>
+      <em class="post-meta-link">
+        <a href="https://github.com/AlexIzh/Griddle">GitHub Repository</a>
+      </em>
+      <br />
+      <em class="post-meta">
+        <time>Mar, 2017</time>
+      </em>
+      <br />
+      
+      <em class="post-meta">
+        MacOS, iOS, Swift
+      </em>
+      <br />
+      
+      <em class="post-meta">
+        A layer for working with a table view, a collection view and any other view, which has a collection structure.
+      </em>
+    </header>
+
+    <div class="post-content">
+      <p>It’s another one layer for working with collections with one interface and minimize distinguishing it inside your code.
+Except for default behavior like supporting UITableView and UICollectionView with one interface, it also allows to change a data source just by one line, it allows to support UITableView for an iPhone and UICollectionView for an iPad for one dataset with one interface, and use one code for handling all collections stuff, such as moving/selection/etc. At the same time, it supports custom collection views (like on the screenshot below) with exactly the same interface.</p>
+
+<ol>
+  <li>You don’t need to implement a delegate/dataSource of a tableView/collectionView anymore. You just have one presenter which does it for you. So you will get one interface of callbacks from both table and collection views.</li>
+  <li>You don’t need to care about data updating, you just need to delete/add/move/replace/insert/etc elements in your data source class and the view will get it automatically.</li>
+  <li>If you work with CoreData, you don’t need to care about updating data from <code>NSFetchedResultsController</code> anymore. Just use <code>FetchedResultsSource</code> and when the database is changed, your UI will be changed at the same time.</li>
+  <li>Do you have a custom view with a collection structure? It is easy. Just implement your presenter which will work with your view, the example you can find inside the repository.</li>
+</ol>
+
+<p>Unfortunately, it hasn’t been updated a long time since it isn’t used by anyone and it has got swift 3 supporting right now.</p>
+
+<p>Code sample:</p>
+
+<pre><code class="language-swift">if let tableView = tableView {
+    let map = DefaultMap()
+    map.viewInfoGeneration = { _, _ in ViewInfo(identifier: "Cell", viewClass: MocTableCell.self) }
+    
+    presenter = TablePresenter(tableView, source: yourSource, map: map)
+  } else if let collectionView = collectionView {
+    let map = DefaultMap()
+    map.viewInfoGeneration = { _, _ in ViewInfo(identifier: "Cell", viewClass: MocCollectionCell.self) }
+    
+    presenter = CollectionPresenter(collectionView, source: yourSource, map: map)
+  } else {
+    fatalError("You forgot to setup tableView or collectionView")
+  }
+  
+  presenter.delegate.didSelectCell = { [unowned self] cell, model, path in
+    print("\(model) is selected at \(path)")
+  }
+</code></pre>
+
+<p>Examples: 
+iPhone has got UITableView, iPad - UICollectionView <br />
+<img width="280" src="/images/github/griddle_iphone.png" />
+<img width="400" src="/images/github/griddle_ipad.png" /></p>
+
+<p>Custom view supporting <br />
+<img width="280" src="/images/github/griddle_custom_view.png" /></p>
+
+<p>A few sources for one table view <br />
+<img width="280" src="/images/github/griddle_2source.png" />
+<img width="280" src="/images/github/griddle_2source2.png" /></p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

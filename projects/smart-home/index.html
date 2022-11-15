@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Application for SmartHomes</title>
+<meta name="description" content="Role: Lead iOS Developer">
+
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="https://alexizh.github.io//projects/smart-home/">
+<link rel="alternate" type="application/rss+xml" title="AlexIzh" href="https://alexizh.github.io//feed.xml" />
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-112545550-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+<body>
+  <header class="site-header">
+  <div class="container">
+    <input type="checkbox" id="toggleNavbar">
+    <h1 class="logo"><a href="/" title="Home"><span>Home</span></a></h1>
+    <label for="toggleNavbar" role="button" class="toggle-navbar-button">
+      <i class="icon icon-menu"></i>
+      <i class="icon icon-cross"></i>
+    </label>
+    <nav class="navbar">
+      <ul>
+        
+        <li><a href="/about" title="About">About</a>
+        </li>
+        
+        <li><a href="/gh-activity" title="GitHub Projects">GitHub Projects</a>
+        </li>
+        
+        <li><a href="/portfolio" title="Portfolio">Portfolio</a>
+        </li>
+        
+        <li><a href="/blog" title="Blog">Blog</a>
+        </li>
+        
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-rss"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="main-container">
+  <div class="container">
+    <article role="article" class="post">
+
+  <div class="card">
+    <header class="post-header">
+      <h1 class="post-title">Application for SmartHomes</h1>
+      <em class="post-meta">
+        <time>Jan, 2016</time>
+      </em>
+      <br />
+      <em class="post-meta">
+        An iPhone/iPad application for managing the smart home system controlled by the hardware on raspbery pi.
+      </em>
+    </header>
+
+    <div class="post-content">
+      <p><strong>Role:</strong> Lead iOS Developer</p>
+
+<p><strong>Team:</strong> Up to 4 developers at one time</p>
+
+<p><strong>Responsibility:</strong> Leading the development process, developing MVP and version 1.0,</p>
+
+<p><strong>Technologies:</strong> <em>Swift</em>, <em>MQTT</em>, <em>Storyboards</em>, <em>CoreData</em>, <em>OpenSSL</em></p>
+
+<h4>Description</h4>
+<p>It’s one of the most complex applications I ever made. It contained tons of custom mechanics, animations, non-standard UI layouts. Almost every screen there contained something interesting from development side.</p>
+
+<p><strong>Just a few examples:</strong></p>
+
+<p><strong>Demo mode:</strong> The application can work with the sample database without the Internet connection. Any user’s action should change the database as inside a real app using. For that, we implemented a simple server inside the app which was injected to our network layer just by one line. So, for the whole app there was no difference it works inside demo mode or not.</p>
+
+<p><strong>iPad version:</strong> the iPad version was a bit different from the iPhone version. Almost all table views from iPhone version converted to collection views for iPad version. For that, I implemented a simple interface which allows working with collections (table/collection/custom). You can check it out <a href="https://github.com/AlexIzh/Griddle">here</a>.</p>
+
+<p><strong>DB synch and encryption:</strong> Since it’s an app for managing an entire home and a user should be able to use the app not only from home inside his local network but also outside of this, it required quite good encryption. It was done by generating a user’s certificate right in the device with encryption all messages between the device and the MQTT broker.</p>
+
+<p>Also, since the home data wasn’t updated so often, we implemented full data synchronization between hardware and iOS app. A user could update any data in real-time and see changes at the same time in his iPhone/iPad device. Only data was updated very often is states of devices, getting which is way faster than loading every time every page from scratch.</p>
+
+<p>Of course, there a lot of interesting things yet which I missed here, if you are interested, feel free to write an email to me.</p>
+
+<h3>App</h3>
+<p><a href="https://itunes.apple.com/ch/app/sarah-smart-home-for-digitalstrom/id1142130628">App Store page</a></p>
+
+<p><img width="200" src="/images/projects/sarah/1.png" />
+<img width="200" src="/images/projects/sarah/2.png" />
+<img width="200" src="/images/projects/sarah/3.png" />
+<br />
+<img width="200" src="/images/projects/sarah/4.png" />
+<img width="200" src="/images/projects/sarah/5.png" />
+<br />
+<img width="200" src="/images/projects/sarah/17.png" />
+<img width="200" src="/images/projects/sarah/18.png" />
+<img width="200" src="/images/projects/sarah/19.png" />
+<br />
+<img src="/images/projects/sarah/6.png" />
+<img src="/images/projects/sarah/7.png" />
+<img src="/images/projects/sarah/8.png" />
+<img src="/images/projects/sarah/9.png" />
+<img src="/images/projects/sarah/10.png" />
+<img src="/images/projects/sarah/11.png" />
+<img src="/images/projects/sarah/12.png" />
+<img src="/images/projects/sarah/13.png" />
+<img src="/images/projects/sarah/14.png" />
+<img src="/images/projects/sarah/15.png" />
+<img src="/images/projects/sarah/16.png" /></p>
+
+    </div>
+  </div>
+
+</article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <ul class="social">
+  
+  <li><a href="mailto:alex.severyanov@gmail.com" target="_blank"><i class="icon icon-mail4"></i></a></li>
+  
+  
+  <li><a href="https://github.com/alexizh" target="_blank"><i class="icon icon-github"></i></a></li>
+  
+  
+  
+  
+  <li><a href="https://linkedin.com/in/alex-severyanov-7a2403aa" target="_blank"><i class="icon icon-linkedin"></i></a></li>
+  
+  
+  <li><a href="https://t.me/alexizh" target="_blank"><i class="icon icon-telegram"></i></a></li>
+  
+</ul>
+    <p class="txt-medium-gray">
+      <small>&copy;2022 All rights reserved. Made with <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> and ♥</small>
+    </p>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>
